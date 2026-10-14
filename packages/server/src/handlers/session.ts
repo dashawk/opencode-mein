@@ -1,4 +1,5 @@
 import { Session } from "@opencode/core/session"
+import { SessionSchedule } from "@opencode/core/session/schedule"
 import { SessionStats } from "@opencode/core/session/stats"
 import { SessionTitle } from "@opencode/core/session/title"
 import { SessionTransfer } from "@opencode/core/session/transfer"
@@ -36,6 +37,7 @@ export const SessionHandler = HttpApiBuilder.group(Api, "server.session", (handl
   Effect.gen(function* () {
     const session = yield* Session.Service
     const transfer = yield* SessionTransfer.Service
+    const schedule = yield* SessionSchedule.Service
     const requireOwnedForm = Effect.fnUntraced(function* (sessionID: Form.Info["sessionID"], formID: Form.ID) {
       const form = yield* Form.Service
       const info = yield* form.get(formID).pipe(Effect.catchTag("Form.NotFoundError", () => missingForm(formID)))
@@ -567,6 +569,43 @@ export const SessionHandler = HttpApiBuilder.group(Api, "server.session", (handl
               : session.queueInbox({ sessionID: ctx.params.sessionID, inboxID: ctx.params.inboxID }),
             `Pending input cannot change to ${ctx.payload.delivery}`,
           )
+        }),
+      )
+      .handle(
+        "session.schedule.create",
+        Effect.fn(function* (ctx) {
+          const text = ctx.payload.text.trim()
+          if (!text)
+            return yield* new InvalidRequestError({ message: "Scheduled prompt text is required", field: "text" })
+          if (ctx.payload.delayMs < 1000)
+            return yield* new InvalidRequestError({
+              message: "Schedule delay must be at least 1000 milliseconds",
+              field: "delayMs",
+            })
+          return {
+            data: yield* schedule
+              .add({ sessionID: ctx.params.sessionID, text, delayMs: ctx.payload.delayMs })
+              .pipe(Effect.catchTag("Session.NotFoundError", missingSession)),
+          }
+        }),
+      )
+      .handle(
+        "session.schedule.list",
+        Effect.fn(function* (ctx) {
+          return {
+            data: yield* schedule
+              .list(ctx.params.sessionID)
+              .pipe(Effect.catchTag("Session.NotFoundError", missingSession)),
+          }
+        }),
+      )
+      .handle(
+        "session.schedule.cancel",
+        Effect.fn(function* (ctx) {
+          yield* schedule
+            .cancel({ sessionID: ctx.params.sessionID, scheduleID: ctx.params.scheduleID })
+            .pipe(Effect.catchTag("Session.NotFoundError", missingSession))
+          return HttpApiSchema.NoContent.make()
         }),
       )
       .handle(

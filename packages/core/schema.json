@@ -1,8 +1,8 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "5067fae0-90ff-4601-82d7-dd050ea9dc8f",
-  "prevIds": ["e98619ef-c334-45e3-8c48-9932ed1ef290"],
+  "id": "eb9f4cc6-13bd-4a80-9081-dd21a5935717",
+  "prevIds": ["5067fae0-90ff-4601-82d7-dd050ea9dc8f"],
   "ddl": [
     {
       "name": "account_state",
@@ -66,6 +66,10 @@
     },
     {
       "name": "session_pending",
+      "entityType": "tables"
+    },
+    {
+      "name": "session_schedule",
       "entityType": "tables"
     },
     {
@@ -1088,6 +1092,56 @@
       "generated": null,
       "name": "id",
       "entityType": "columns",
+      "table": "session_schedule"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "session_id",
+      "entityType": "columns",
+      "table": "session_schedule"
+    },
+    {
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "text",
+      "entityType": "columns",
+      "table": "session_schedule"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "deliver_at",
+      "entityType": "columns",
+      "table": "session_schedule"
+    },
+    {
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "time_created",
+      "entityType": "columns",
+      "table": "session_schedule"
+    },
+    {
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "name": "id",
+      "entityType": "columns",
       "table": "session_v2"
     },
     {
@@ -1630,6 +1684,17 @@
       "table": "session_pending"
     },
     {
+      "columns": ["session_id"],
+      "tableTo": "session_v2",
+      "columnsTo": ["id"],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "name": "fk_session_schedule_session_id_session_v2_id_fk",
+      "entityType": "fks",
+      "table": "session_schedule"
+    },
+    {
       "columns": ["project_id"],
       "tableTo": "project",
       "columnsTo": ["id"],
@@ -1768,6 +1833,13 @@
       "nameExplicit": false,
       "name": "session_pending_pk",
       "table": "session_pending",
+      "entityType": "pks"
+    },
+    {
+      "columns": ["id"],
+      "nameExplicit": false,
+      "name": "session_schedule_pk",
+      "table": "session_schedule",
       "entityType": "pks"
     },
     {
@@ -2015,6 +2087,24 @@
       "name": "session_pending_session_admitted_seq_idx",
       "entityType": "indexes",
       "table": "session_pending"
+    },
+    {
+      "columns": [
+        {
+          "value": "session_id",
+          "isExpression": false
+        },
+        {
+          "value": "deliver_at",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "name": "session_schedule_session_deliver_at_idx",
+      "entityType": "indexes",
+      "table": "session_schedule"
     },
     {
       "columns": [

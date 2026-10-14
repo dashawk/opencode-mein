@@ -71,6 +71,12 @@ import type {
   SessionInboxCancelOutput,
   SessionInboxUpdateInput,
   SessionInboxUpdateOutput,
+  SessionScheduleCreateInput,
+  SessionScheduleCreateOutput,
+  SessionScheduleListInput,
+  SessionScheduleListOutput,
+  SessionScheduleCancelInput,
+  SessionScheduleCancelOutput,
   SessionInstructionsEntryListInput,
   SessionInstructionsEntryListOutput,
   SessionInstructionsEntryPutInput,
@@ -909,6 +915,42 @@ export function make(options: ClientOptions) {
               body: { delivery: input["delivery"] },
               successStatus: 204,
               declaredStatuses: [400, 401, 404, 409],
+              empty: true,
+            },
+            requestOptions,
+          ),
+      },
+      schedule: {
+        create: (input: SessionScheduleCreateInput, requestOptions?: RequestOptions) =>
+          request<{ readonly data: SessionScheduleCreateOutput }>(
+            {
+              method: "POST",
+              path: `/api/session/${encodeURIComponent(input.sessionID)}/schedule`,
+              body: { text: input["text"], delayMs: input["delayMs"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 404],
+              empty: false,
+            },
+            requestOptions,
+          ).then((value) => value.data),
+        list: (input: SessionScheduleListInput, requestOptions?: RequestOptions) =>
+          request<{ readonly data: SessionScheduleListOutput }>(
+            {
+              method: "GET",
+              path: `/api/session/${encodeURIComponent(input.sessionID)}/schedule`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 404],
+              empty: false,
+            },
+            requestOptions,
+          ).then((value) => value.data),
+        cancel: (input: SessionScheduleCancelInput, requestOptions?: RequestOptions) =>
+          request<SessionScheduleCancelOutput>(
+            {
+              method: "DELETE",
+              path: `/api/session/${encodeURIComponent(input.sessionID)}/schedule/${encodeURIComponent(input.scheduleID)}`,
+              successStatus: 204,
+              declaredStatuses: [400, 401, 404],
               empty: true,
             },
             requestOptions,

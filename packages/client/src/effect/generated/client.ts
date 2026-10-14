@@ -77,6 +77,12 @@ import type {
   SessionInboxCancelOutput,
   SessionInboxUpdateInput,
   SessionInboxUpdateOutput,
+  SessionScheduleCreateInput,
+  SessionScheduleCreateOutput,
+  SessionScheduleListInput,
+  SessionScheduleListOutput,
+  SessionScheduleCancelInput,
+  SessionScheduleCancelOutput,
   SessionInstructionsEntryListInput,
   SessionInstructionsEntryListOutput,
   SessionInstructionsEntryPutInput,
@@ -647,6 +653,32 @@ const EndpointSessionInboxUpdate = (raw: RawClient["server.session"]) => (input:
     }).pipe(Effect.mapError(mapClientError)),
   )
 
+const EndpointSessionScheduleCreate = (raw: RawClient["server.session"]) => (input: SessionScheduleCreateInput) =>
+  preserveEffect<SessionScheduleCreateOutput>()(
+    raw["session.schedule.create"]({
+      params: { sessionID: input["sessionID"] },
+      payload: { text: input["text"], delayMs: input["delayMs"] },
+    }).pipe(
+      Effect.mapError(mapClientError),
+      Effect.map((value) => value.data),
+    ),
+  )
+
+const EndpointSessionScheduleList = (raw: RawClient["server.session"]) => (input: SessionScheduleListInput) =>
+  preserveEffect<SessionScheduleListOutput>()(
+    raw["session.schedule.list"]({ params: { sessionID: input["sessionID"] } }).pipe(
+      Effect.mapError(mapClientError),
+      Effect.map((value) => value.data),
+    ),
+  )
+
+const EndpointSessionScheduleCancel = (raw: RawClient["server.session"]) => (input: SessionScheduleCancelInput) =>
+  preserveEffect<SessionScheduleCancelOutput>()(
+    raw["session.schedule.cancel"]({ params: { sessionID: input["sessionID"], scheduleID: input["scheduleID"] } }).pipe(
+      Effect.mapError(mapClientError),
+    ),
+  )
+
 const EndpointSessionInstructionsEntryList =
   (raw: RawClient["server.session"]) => (input: SessionInstructionsEntryListInput) =>
     preserveEffect<SessionInstructionsEntryListOutput>()(
@@ -804,6 +836,11 @@ const adaptGroupSession = (raw: RawClient["server.session"]) => ({
     list: EndpointSessionInboxList(raw),
     cancel: EndpointSessionInboxCancel(raw),
     update: EndpointSessionInboxUpdate(raw),
+  },
+  schedule: {
+    create: EndpointSessionScheduleCreate(raw),
+    list: EndpointSessionScheduleList(raw),
+    cancel: EndpointSessionScheduleCancel(raw),
   },
   instructions: {
     entry: {

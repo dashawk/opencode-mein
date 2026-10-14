@@ -1,5 +1,6 @@
 import { SessionMessage } from "@opencode/schema/session-message"
 import { SessionInbox } from "@opencode/schema/session-inbox"
+import { SessionSchedule } from "@opencode/schema/session-schedule"
 import { PromptInput } from "@opencode/schema/prompt-input"
 import { Session } from "@opencode/schema/session"
 import { SessionStats } from "@opencode/schema/session-stats"
@@ -641,6 +642,47 @@ export const makeSessionGroup = <I extends HttpApiMiddleware.AnyId, S, FormI ext
           identifier: "session.inbox.update",
           summary: "Update inbox item",
           description: "Change a pending inbox item's delivery mode. Steering wakes session execution.",
+        }),
+      ),
+    )
+    .add(
+      HttpApiEndpoint.post("session.schedule.create", "/api/session/:sessionID/schedule", {
+        params: { sessionID: Session.ID },
+        payload: Schema.Struct({ text: Schema.String, delayMs: Schema.Number }),
+        success: Schema.Struct({ data: SessionSchedule.Info }),
+        error: [InvalidRequestError, SessionNotFoundError],
+      }).annotateMerge(
+        OpenApi.annotations({
+          identifier: "session.schedule.create",
+          summary: "Schedule a prompt",
+          description:
+            "Durably schedule a prompt that admits as a steer and wakes the session once its delay elapses. The schedule survives restarts and delivers at most once; `delayMs` must be at least 1000.",
+        }),
+      ),
+    )
+    .add(
+      HttpApiEndpoint.get("session.schedule.list", "/api/session/:sessionID/schedule", {
+        params: { sessionID: Session.ID },
+        success: Schema.Struct({ data: Schema.Array(SessionSchedule.Info) }),
+        error: SessionNotFoundError,
+      }).annotateMerge(
+        OpenApi.annotations({
+          identifier: "session.schedule.list",
+          summary: "List scheduled prompts",
+          description: "List a session's schedules ordered by delivery time.",
+        }),
+      ),
+    )
+    .add(
+      HttpApiEndpoint.delete("session.schedule.cancel", "/api/session/:sessionID/schedule/:scheduleID", {
+        params: { sessionID: Session.ID, scheduleID: SessionSchedule.ID },
+        success: HttpApiSchema.NoContent,
+        error: SessionNotFoundError,
+      }).annotateMerge(
+        OpenApi.annotations({
+          identifier: "session.schedule.cancel",
+          summary: "Cancel scheduled prompt",
+          description: "Cancel a schedule that has not yet delivered. Unknown schedules are a no-op.",
         }),
       ),
     )

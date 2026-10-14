@@ -3,6 +3,7 @@ export * as ServerProcess from "./process"
 import { NodeHttpServer } from "@effect/platform-node"
 import { Bus } from "@opencode/core/bus"
 import { SessionRestart } from "@opencode/core/session/execution/restart"
+import { SessionSchedule } from "@opencode/core/session/schedule"
 import { InstallationEvent } from "@opencode/schema/installation-event"
 import { hasPtyConnectTicketURL } from "@opencode/protocol/groups/pty"
 import { hasPersistentPtyConnectTicketURL } from "@opencode/protocol/groups/persistent-pty"
@@ -109,6 +110,11 @@ export const start = Effect.fn("ServerProcess.start")(function* <E, R>(
         Effect.provideService(Scope.Scope, applicationScope),
       )
     }
+    // Timers are process-local, so re-arm every stored schedule from a previous process —
+    // an overdue one delivers on the next tick, exactly once via prompt id reconciliation.
+    yield* Effect.forkScoped(Context.get(context, SessionSchedule.Service).recover).pipe(
+      Effect.provideService(Scope.Scope, applicationScope),
+    )
     yield* Ref.set(application, Option.some(Context.get(context, HttpRouter.HttpRouter).asHttpEffect()))
     yield* status.ready
     const bus = Context.get(context, Bus.Service)

@@ -118,6 +118,8 @@ export type SessionInboxSyntheticPayload = { text: string; description?: string;
 
 export type SessionInboxCompactionPayload = {}
 
+export type SessionScheduleID = string
+
 export type InstructionEntryKey = string
 
 export type SessionGenerateResponse = { data: { text: string } }
@@ -534,6 +536,14 @@ export type SessionInboxCompaction = {
   type: "compaction"
   payload: SessionInboxCompactionPayload
   delivery: SessionInboxDelivery
+}
+
+export type SessionScheduleInfo = {
+  id: SessionScheduleID
+  sessionID: SessionID
+  text: string
+  deliverAt: number
+  time: { created: number }
 }
 
 export type InstructionEntryInfo = { key: InstructionEntryKey; value: JsonValue }
@@ -4725,6 +4735,25 @@ export type SessionInboxUpdateInput = {
 }
 
 export type SessionInboxUpdateOutput = void
+
+export type SessionScheduleCreateInput = {
+  readonly sessionID: { readonly sessionID: string }["sessionID"]
+  readonly text: { readonly text: string; readonly delayMs: number }["text"]
+  readonly delayMs: { readonly text: string; readonly delayMs: number }["delayMs"]
+}
+
+export type SessionScheduleCreateOutput = { data: SessionScheduleInfo }["data"]
+
+export type SessionScheduleListInput = { readonly sessionID: { readonly sessionID: string }["sessionID"] }
+
+export type SessionScheduleListOutput = { data: Array<SessionScheduleInfo> }["data"]
+
+export type SessionScheduleCancelInput = {
+  readonly sessionID: { readonly sessionID: string; readonly scheduleID: string }["sessionID"]
+  readonly scheduleID: { readonly sessionID: string; readonly scheduleID: string }["scheduleID"]
+}
+
+export type SessionScheduleCancelOutput = void
 
 export type SessionInstructionsEntryListInput = { readonly sessionID: { readonly sessionID: string }["sessionID"] }
 

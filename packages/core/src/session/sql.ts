@@ -4,6 +4,7 @@ import { directoryColumn, pathColumn } from "../database/path.js"
 import { ProjectTable } from "../project/sql.js"
 import type { SessionMessage } from "./message.js"
 import type { SessionInbox } from "./inbox.js"
+import type { SessionSchedule } from "./schedule.js"
 import type { FileDiff } from "@opencode/schema/file-diff"
 import type { Permission } from "@opencode/schema/permission"
 import type { Project } from "@opencode/schema/project"
@@ -142,6 +143,23 @@ export const SessionInboxTable = sqliteTable(
     index("session_inbox_session_delivery_seq_idx").on(table.session_id, table.delivery, table.enqueued_seq),
     uniqueIndex("session_inbox_session_enqueued_seq_idx").on(table.session_id, table.enqueued_seq),
   ],
+)
+
+export const SessionScheduleTable = sqliteTable(
+  "session_schedule",
+  {
+    id: text().$type<SessionSchedule.ID>().primaryKey(),
+    session_id: text()
+      .$type<SessionSchema.ID>()
+      .notNull()
+      .references(() => SessionTable.id, { onDelete: "cascade" }),
+    text: text().notNull(),
+    deliver_at: integer().notNull(),
+    time_created: integer()
+      .notNull()
+      .$default(() => Date.now()),
+  },
+  (table) => [index("session_schedule_session_deliver_at_idx").on(table.session_id, table.deliver_at)],
 )
 
 export const InstructionEntryTable = sqliteTable(

@@ -64,7 +64,9 @@ import { useEditorContext } from "../../context/editor"
 import { useDialog } from "../../ui/dialog"
 import { DialogSelect } from "../../ui/dialog-select"
 import { DialogSessionRename } from "../../component/dialog-session-rename"
+import { DialogSchedule } from "../../component/dialog-schedule"
 import { DialogImagePreview } from "../../component/dialog-image-preview"
+import { formatDuration, parseSchedule } from "../../prompt/parse"
 import { statusLabel } from "../../component/dialog-workspace-file-changes"
 import { DialogMessage } from "./dialog-message"
 import { DialogFork } from "./dialog-fork"
@@ -930,6 +932,36 @@ export function Session(props: {
       },
     },
     {
+      title: "Schedule prompt",
+      id: "session.schedule",
+      group: "Prompt",
+      slash: { name: "schedule", arguments: true as const },
+      run: (input?: string) => {
+        const parsed = parseSchedule(input ?? "")
+        if (parsed.type === "list") return DialogSchedule.show(dialog, route.sessionID)
+        if (parsed.type === "invalid") return toast.show({ message: parsed.message, variant: "error" })
+        if (parsed.type === "cancel") {
+          void client.api.session.schedule
+            .list({ sessionID: route.sessionID })
+            .then((schedules) => {
+              const target = schedules[parsed.index - 1]
+              if (!target) return toast.show({ message: `No scheduled prompt #${parsed.index}`, variant: "error" })
+              return client.api.session.schedule
+                .cancel({ sessionID: route.sessionID, scheduleID: target.id })
+                .then(() => toast.show({ message: `Cancelled scheduled prompt #${parsed.index}`, variant: "success" }))
+            })
+            .catch((error) => toast.error(error))
+          return
+        }
+        void client.api.session.schedule
+          .create({ sessionID: route.sessionID, text: parsed.prompt, delayMs: parsed.delayMs })
+          .then(() =>
+            toast.show({ message: `Scheduled prompt in ${formatDuration(parsed.delayMs)}`, variant: "success" }),
+          )
+          .catch((error) => toast.error(error))
+      },
+    },
+    {
       title: "Jump to message",
       id: "session.timeline",
       group: "Session",
@@ -1463,9 +1495,7 @@ export function Session(props: {
                   onMouseOut={() => setLatestHovered(false)}
                   onMouseUp={toBottom}
                 >
-                  <text
-                    fg={latestHovered() ? theme.text.action.secondary.hovered : theme.text.action.secondary.base}
-                  >
+                  <text fg={latestHovered() ? theme.text.action.secondary.hovered : theme.text.action.secondary.base}>
                     Jump to latest ↓
                   </text>
                 </box>
@@ -1511,12 +1541,7 @@ export function Session(props: {
                     }}
                   </Show>
                 </Match>
-                <Match
-                  when={
-                    session() &&
-                    currentLocation.error?.location.directory === session()!.location.directory
-                  }
-                >
+                <Match when={session() && currentLocation.error?.location.directory === session()!.location.directory}>
                   <SessionLocationMissing
                     directory={session()!.location.directory}
                     projectID={session()!.projectID}
@@ -2772,9 +2797,7 @@ function BlockTool(props: BlockToolProps) {
               <Show
                 when={props.spinner}
                 fallback={
-                  <text
-                    fg={permission() ? theme.text.feedback.warning.base : (props.headerColor ?? theme.text.muted)}
-                  >
+                  <text fg={permission() ? theme.text.feedback.warning.base : (props.headerColor ?? theme.text.muted)}>
                     {title()}
                   </text>
                 }
@@ -2962,11 +2985,7 @@ function ShellDisplay(props: {
           <Show
             when={isRunning()}
             fallback={
-              <text
-                fg={theme.text.base}
-                wrapMode={expanded() ? "word" : "char"}
-                maxHeight={expanded() ? undefined : 2}
-              >
+              <text fg={theme.text.base} wrapMode={expanded() ? "word" : "char"} maxHeight={expanded() ? undefined : 2}>
                 {limitedInput()}
               </text>
             }
@@ -3067,7 +3086,9 @@ function Read(props: ToolProps) {
         Read {pathFormatter.format(stringValue(props.input.path))}
         <Show when={props.input.offset !== undefined || props.input.limit !== undefined}>
           :{finiteNumber(props.input.offset) || 1}-
-          {props.input.limit ? (finiteNumber(props.input.offset) || 1) + (finiteNumber(props.input.limit) || 0) - 1 : ""}
+          {props.input.limit
+            ? (finiteNumber(props.input.offset) || 1) + (finiteNumber(props.input.limit) || 0) - 1
+            : ""}
         </Show>
       </InlineTool>
       <For each={loaded()}>
