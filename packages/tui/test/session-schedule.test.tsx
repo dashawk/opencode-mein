@@ -71,6 +71,22 @@ test("/schedule durably schedules a prompt", async () => {
   expect(frame).toContain("Scheduled session")
 })
 
+test("/schedule appears in the slash autocomplete list", async () => {
+  await using setup = await render(async () => undefined)
+
+  await setup.waitForFrame((frame) => frame.includes("Scheduled session"))
+  await setup.mockInput.typeText("/sche")
+  const frame = await setup.waitForFrame((value) => value.includes("/schedule") && value.includes("Schedule prompt"))
+
+  expect(frame).toContain("/schedule")
+
+  // Leave the composer empty: drafts are stashed per session across Prompt
+  // remounts, so unsubmitted text would be restored into the next test's fixture.
+  await setup.mockInput.pressEscape()
+  setup.mockInput.pressKey("c", { ctrl: true })
+  await setup.waitForFrame((value) => !value.includes("/sche"))
+})
+
 test("/schedule rejects a delay without a unit", async () => {
   let createCalls = 0
   await using setup = await render(async (url, request) => {
