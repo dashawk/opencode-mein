@@ -18,6 +18,7 @@ import type { PromptInput } from "@opencode/schema/prompt-input"
 import type { AgentAttachment } from "@opencode/schema/prompt"
 import type { Skill } from "@opencode/schema/skill"
 import type { FileDiff } from "@opencode/schema/file-diff"
+import type { SessionSchedule } from "@opencode/schema/session-schedule"
 import type { InstructionEntry } from "@opencode/schema/instruction-entry"
 import type { Schema } from "effect"
 import type { Event } from "@opencode/schema/event"
@@ -391,6 +392,28 @@ export type SessionInboxUpdateOutput = void
 export type SessionInboxUpdateOperation<E = never> = (
   input: SessionInboxUpdateInput,
 ) => Effect.Effect<SessionInboxUpdateOutput, E>
+
+export type SessionScheduleCreateInput = {
+  readonly sessionID: Session.ID
+  readonly text: string
+  readonly delayMs: number
+}
+export type SessionScheduleCreateOutput = SessionSchedule.Info
+export type SessionScheduleCreateOperation<E = never> = (
+  input: SessionScheduleCreateInput,
+) => Effect.Effect<SessionScheduleCreateOutput, E>
+
+export type SessionScheduleListInput = { readonly sessionID: Session.ID }
+export type SessionScheduleListOutput = ReadonlyArray<SessionSchedule.Info>
+export type SessionScheduleListOperation<E = never> = (
+  input: SessionScheduleListInput,
+) => Effect.Effect<SessionScheduleListOutput, E>
+
+export type SessionScheduleCancelInput = { readonly sessionID: Session.ID; readonly scheduleID: SessionSchedule.ID }
+export type SessionScheduleCancelOutput = void
+export type SessionScheduleCancelOperation<E = never> = (
+  input: SessionScheduleCancelInput,
+) => Effect.Effect<SessionScheduleCancelOutput, E>
 
 export type SessionInstructionsEntryListInput = { readonly sessionID: Session.ID }
 export type SessionInstructionsEntryListOutput = ReadonlyArray<InstructionEntry.Info>
@@ -1329,6 +1352,11 @@ export interface SessionApi<E = never> {
     readonly list: SessionInboxListOperation<E>
     readonly cancel: SessionInboxCancelOperation<E>
     readonly update: SessionInboxUpdateOperation<E>
+  }
+  readonly schedule: {
+    readonly create: SessionScheduleCreateOperation<E>
+    readonly list: SessionScheduleListOperation<E>
+    readonly cancel: SessionScheduleCancelOperation<E>
   }
   readonly instructions: {
     readonly entry: {

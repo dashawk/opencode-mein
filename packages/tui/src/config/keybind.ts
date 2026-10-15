@@ -131,6 +131,7 @@ export const Definitions = {
   "session.queued_prompts": keybind("<leader>q", "Manage queued prompts"),
   "queued_prompt.undo": keybind("ctrl+u", "Undo queued prompt"),
   "queued_prompt.delete": keybind("ctrl+d", "Delete queued prompt"),
+  "schedule.cancel": keybind("ctrl+d", "Cancel scheduled prompt"),
   "session.toggle.exploration_grouping": keybind("none", "Toggle related tool call grouping"),
   "session.verbosity.cycle": keybind("none", "Cycle transcript verbosity"),
   "session.child.first": keybind("down", "Toggle subagent picker"),

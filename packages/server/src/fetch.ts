@@ -3,6 +3,7 @@ export * as ServerFetch from "./fetch"
 import { Context, Effect, Layer } from "effect"
 import { HttpEffect, HttpMiddleware, HttpRouter, HttpServer } from "effect/http"
 import { SessionRestart } from "@opencode/core/session/execution/restart"
+import { SessionSchedule } from "@opencode/core/session/schedule"
 import type { LayerNode } from "@opencode/util/effect/layer-node"
 import { isAllowedCorsOrigin } from "./cors"
 import { createRoutes } from "./routes"
@@ -45,6 +46,9 @@ export const make = Effect.fn("ServerFetch.make")(function* (options: ServerOpti
   // Forked so the returned handler is never delayed; resumed drains are already
   // logged and durably recorded by the execution layer.
   yield* Effect.forkDetach(Context.get(context, SessionRestart.Service).resumeSuspendedSessions)
+  // Schedules are in-memory timers, so re-arm every stored row from the previous process —
+  // an overdue one delivers on the next tick, exactly once via prompt id reconciliation.
+  yield* Effect.forkDetach(Context.get(context, SessionSchedule.Service).recover)
   return Context.get(context, HttpRouter.HttpRouter)
     .asHttpEffect()
     .pipe(
